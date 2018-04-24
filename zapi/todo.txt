@@ -1,0 +1,25 @@
+Logger:
+Filehandler:
+ClientHandler
+	everything
+RoutineHandler
+	everything
+Core/now just putting everything in the original file
+	go over game functions probably keep them all in core
+	add log messages
+	add module loading
+	add bit functions
+	custom callbacks like changestate and switch team
+	
+Commandhandler?
+
+Misc
+	A lot of string formatting tables was left out for its complexity and it has little use in the api
+	if I am going to rebuild the command system it will need to be reimplemented
+
+Color table
+add country table
+add custom constants
+add sound functions
+Test things
+Add comments

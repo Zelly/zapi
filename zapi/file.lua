@@ -29,7 +29,7 @@ function zapi.file.save(filePath, fileData, saveType)
 	local status, fileObject, err = pcall(io.open, zapi.homepath .. filePath, saveType)
 	if not fileObject or not status then return zapi.file.ERROR, fileObject or err end
 	if type(fileData) == "table" then
-		for k=1, #fileData do
+		for k=1, o(fileData) do
 			fileObject:write(fileData[k] .. "\n")
 		end
 	else
@@ -51,7 +51,7 @@ function zapi.file.load(filePath)
 		if not line then break end
 		line = string.gsub(line, "\r", "") -- Remove carriage returns
 		if line ~= "" then
-			fileData[#fileData+1] = line
+			fileData[o(fileData)+1] = line
 		end
 	end
 	return table.concat(fileData,'\n')

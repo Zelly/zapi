@@ -1,5 +1,5 @@
 zapi.misc = { }
-
+-- notepad find:  #(\w+)  replace:  o\((\1)\) 
 ------------------
 -- TABLE FUNCTIONS
 ------------------
@@ -9,10 +9,10 @@ zapi.misc.table = { }
 function zapi.misc.table.average(t)
 	local average = 0
 	if not t then return average end
-	for k=1, #t do
+	for k=1, o(t) do
 		average = average + t[k]
 	end
-	return avg / #t
+	return avg / o(t)
 end
 
 --- Returns table t[rangeStart] to t[rangeEnd]
@@ -22,11 +22,11 @@ function zapi.misc.table.range(t, rangeStart, rangeEnd)
 	if not t then return { } end
 	if not next(t) then return t end
 	rangeStart = tonumber(rangeStart) or 1
-	rangeEnd = tonumber(rangeEnd) or #t
+	rangeEnd = tonumber(rangeEnd) or o(t)
 	local newTable = { }
 	
 	for k=rangeStart, rangeEnd do
-		newTable[#newTable+1] = t[k]
+		newTable[o(newTable)+1] = t[k]
 	end
 	return newTable
 end
@@ -35,8 +35,8 @@ end
 -- returns new shuffled table
 function zapi.misc.table.shuffle(t)
 	local newTable = { }
-	while #t > 0 do
-		table.insert(newTable, table.remove(t, math.random(#t) ) )
+	while o(t) > 0 do
+		table.insert(newTable, table.remove(t, math.random(o(t)) ) )
 	end
 	return newTable
 end
@@ -45,7 +45,7 @@ end
 function zapi.misc.table.total(t)
 	local total = 0.0
 	if not t then return total end
-	for k=1, #t do
+	for k=1, o(t) do
 		total = t[k] + total
 	end
 	return total or 0.0
@@ -60,14 +60,14 @@ function zapi.misc.table.merge(t1, t2)
 	local t = { }
 	
 	-- Add any from table one that is not in table 2
-	for k=1, #t1 do
+	for k=1, o(t1) do
 		if not zapi.misc.table.find(t2, t1[k]) then
-			t[#t+1] = t1[k] end
+			t[o(t)+1] = t1[k] end
 		end
 	end
 	-- Add table 2 values (Since no table 2 values were added in first iteration)
-	for k=1, #t2 do
-		t[#t+1] = t2[k]
+	for k=1, o(t2) do
+		t[o(t)+1] = t2[k]
 	end
 end
 
@@ -75,7 +75,7 @@ end
 -- if index then will search table of table with index
 -- returns true or false
 function zapi.misc.table.find(t, value, index)
-	for k=1, #t do
+	for k=1, o(t) do
 		if index then
 			if t[k][index] == value then
 				return true
@@ -89,10 +89,28 @@ function zapi.misc.table.find(t, value, index)
 	return false
 end
 
+--- Checks if a value exists in a table
+-- if index then will search table of table with index
+-- returns t[k] and k or nil
+function zapi.misc.table.get(t, value, index)
+	for k=1, o(t) do
+		if index then
+			if t[k][index] == value then
+				return t[k], k
+			end
+		else
+			if t[k] == value then
+				return t[k], k
+			end
+		end
+	end
+	return nil
+end
+
 --- Checks if a tables have any duplicates exists in a table
 -- returns true or false
 function zapi.misc.table.match(t1, t2)
-	for k=1, #t1 do
+	for k=1, o(t1) do
 		if zapi.misc.table.find(t2, t1[k]) then
 			return true
 		end
@@ -106,7 +124,7 @@ end
 function zapi.misc.table.remove(t, value, limit)
 	limit = tonumber(limit) or 0
 	local removed = 0 
-	for k=1, #t do
+	for k=1, o(t) do
 		if t[k] == value then
 			table.remove(t, k)
 			removed = removed + 1
@@ -120,7 +138,7 @@ end
 --- Adds a value to a table if it does not already exist
 function zapi.misc.table.addUnique(t, value)
 	if not zapi.misc.table.find(t, value) then
-		t[#t+1] = value
+		t[o(t)+1] = value
 	end
 end
 
@@ -129,7 +147,7 @@ end
 -- returns the length and string
 function zapi.misc.table.getLongestString(t, index, clean)
 	local longest = 0
-	for k=1, #t do
+	for k=1, o(t) do
 		local length = 0
 		if index then
 			length = string.len(t[k][index])
@@ -228,7 +246,7 @@ function zapi.misc.string.split(s, pattern)
 	local s, e, cap = string.find(s, fpat, 1)
 	while s do
 		if s ~= 1 or cap ~= "" then
-			t[#t+1] = cap
+			t[o(t)+1] = cap
 		end
 		last_end = e + 1
 		s, e, cap = string.find(s, fpat, last_end)
@@ -236,7 +254,7 @@ function zapi.misc.string.split(s, pattern)
 
 	if last_end <= string.len(s) then
 		cap = string.sub(s,last_end)
-		t[#t+1] = cap
+		t[o(t)+1] = cap
 	end
 	return t
 end
@@ -296,7 +314,7 @@ function Misc:GetIPType(ip)
 
 	-- check for format 1.11.111.111 for ipv4
 	local chunks = { string.match(ip, "(%d+)%.(%d+)%.(%d+)%.(%d+)")}
-	if #chunks == 4 then
+	if o(chunks) == 4 then
 		for _,v in pairs(chunks) do
 			if (tonumber(v) < 0 or tonumber(v) > 255) then
 				return 0

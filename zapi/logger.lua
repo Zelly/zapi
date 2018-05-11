@@ -6,6 +6,8 @@ zapi.logger.debugging = false
 zapi.logger.debugstream = false
 zapi.logger.debugfilename = "zapi_debug.log"
 zapi.logger.debugdata = { }
+zapi.logger.errorcount = 0
+local errorFilePath = zapi.homepath .. '/' .. et.trap_Cvar_Get( 'fs_game' ) .. '/zapi_errors.log'
 
 --[[
 
@@ -13,6 +15,7 @@ Print to server only:
 zapi.logger.log(logType, message)
 zapi.logger.debug(message)
 zapi.logger.info(message)
+zapi.logger.error(errorLocation, errorTraceback)
 
 Print to all players:
 zapi.logger.chat(message)
@@ -34,15 +37,32 @@ function zapi.logger.log(logType, message)
 		logType,
 		message,
 	}
-	zapi.logger.filedata[#zapi.logger.filedata+1] = newLog
+	zapi.logger.filedata[o(zapi.logger.filedata)+1] = newLog
 end
+
+function zapi.logger.error(errorLocation, errorTraceback)
+	if not errorLocation or not errorTraceback then return end
+	zapi.logger.errorcount = zapi.logger.errorcount + 1
+	local errorFile = io.open(errorFilePath, "ab")
+	errorFile:write("\n(" .. zapi.logger.errorcount .. ") " .. os.date("%c") .. " " .. errorLocation .. "\n" .. errorTraceback .. "\n")
+	errorFile:close()
+	et.G_LogPrint("zapi-error(" .. zapi.logger.errorcount .. "): " .. errorLocation .. "\n")
+	if zapi.logger.errorcount >= 1000 then
+		-- Wayyyy too many errors happening force a shutdown
+		et.G_LogPrint("zapi-error: ****FATAL**** Forcing zapi shutdown, too many errors\n")
+		et.G_LogPrint("zapi-error: Check " .. errorFilePath .. "\n")
+		et_ShutdownGame()
+		zapi = nil
+	end
+end
+
 
 function zapi.logger.debug(message)
 	if not zapi.logger.debugging then return end
 	et.G_LogPrint("[DEBUG] ".. message  .."\n")
 	if zapi.logger.debugstream then
 		-- debug stream file saves should be done in routines
-		zapi.logger.debugdata[#zapi.logger.debugdata+1] = os.date("%X") .. " " .. message
+		zapi.logger.debugdata[o(zapi.logger.debugdata)+1] = os.date("%X") .. " " .. message
 	end
 end
 
@@ -73,8 +93,8 @@ end
 function zapi.logger.save()
 	if not next(zapi.logger.filedata) then return end
 	local fileData = { }
-	for k=1, #zapi.logger.filedata do
-		fileData[#fileData+1] = zapi.logger.filedata[k][1] .. " " .. zapi.logger.filedata[k][2] .. " " .. zapi.logger.filedata[k][3]
+	for k=1, o(zapi.logger.filedata) do
+		fileData[o(fileData)+1] = zapi.logger.filedata[k][1] .. " " .. zapi.logger.filedata[k][2] .. " " .. zapi.logger.filedata[k][3]
 	end
 	
 	if not next(fileData) then return end

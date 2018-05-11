@@ -2,8 +2,6 @@ Logger:
 Filehandler:
 ClientHandler
 	everything
-RoutineHandler
-	everything
 Core/now just putting everything in the original file
 	go over game functions probably keep them all in core
 	add log messages
@@ -18,6 +16,8 @@ Misc
 	if I am going to rebuild the command system it will need to be reimplemented
 
 Color table
+	done, may need to adjust zapi.color.WHITE etc..
+	
 add country table
 add custom constants
 add sound functions

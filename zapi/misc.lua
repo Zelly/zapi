@@ -176,6 +176,33 @@ function zapi.misc.table.nextId(t, index)
 	return id -- shouldn't reach
 end
 
+function zapi.misc.table.insert(t, value, unique, uniqueKey)
+	if not unique then
+		t[o(t)+1] = value
+		return true
+	else
+		local f = false
+		for k=1, o(t) do
+			if not uniqueKey then
+				if t[k] == value then
+					f = true
+					break
+				end
+			else
+				if t[k][uniqueKey] == value[uniqueKey] then
+					f = true
+					break
+				end
+			end
+		end
+		if not f then
+			t[o(t)+1] = value
+			return true
+		end
+	end
+	return false
+end
+
 -------------------
 -- STRING FUNCTIONS
 -------------------

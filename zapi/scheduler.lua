@@ -11,6 +11,8 @@ loop: Milliseconds between loops if 0 then is a "run once" function and will be 
 last: LevelTime that the function last ran ( 0 to start aka not ran yet )
 run : LevelTime to start the function run. (Usually 0 for looping routines)
 desc: description of the function for debugging etc
+
+Idea: add run_till_success key, which will loop infintiely (loop delay must be set) until function returns true
 ]]--
 function zapi.scheduler.run()
 	if zapi.scheduler.active then return end -- Already running

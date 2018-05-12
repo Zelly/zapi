@@ -42,6 +42,7 @@ zapi.currentRound = 0
 zapi.gamestate = "none"
 zapi.intermission = false
 zapi.mapname = ""
+zapi.modname = ""
 
 require("zapi/misc")
 require("zapi/vars")
@@ -69,6 +70,7 @@ function et_InitGame(levelTime, randomSeed, restart)
 		math.randomseed(randomSeed)
 		zapi.startTime = levelTime
 		zapi.mapname = string.lower(et.trap_Cvar_Get("mapname"))
+		zapi.modname = string.lower(et.trap_Cvar_Get("fs_game"))
 		
 		if restart == 1 then
 			zapi.isRestart = true
@@ -288,6 +290,18 @@ function zapi.shrubbot()
 	else
 		return true
 	end
+end
+function zapi.getTeamNum(team)
+	if not team then return nil end
+	if ( team == "b" or team == "allies" or team == "allied" or tonumber(team) == et.TEAM_ALLIES ) then
+		team = et.TEAM_ALLIES
+	elseif ( team == "r" or team == "axis" or tonumber(team) == et.TEAM_AXIS ) then
+		team = et.TEAM_AXIS
+	elseif ( team == "s" or team == "spectator" or team == "spec" or tonumber(team) == et.TEAM_SPEC ) then
+		team = et.TEAM_SPEC
+	end
+	if ( team ~= et.TEAM_AXIS and team ~= et.TEAM_ALLIES and team ~= et.TEAM_SPEC ) then return end
+	return team
 end
 
 -- todo: add Game:getTeams functions

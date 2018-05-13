@@ -1,20 +1,31 @@
+--- zapi.lua - Core file callbacks, some game functions
 zapi = { }
-o = nil
+--[[
+When I try to intialize global variables from the other files they are unaccessible(basically they become local)
+That is why zapi pretty much acts as my "global" 
+]]--
+zapi.NAME = "zapi"
+zapi.LONGNAME = "Zelly's Lua API"
+zapi.VERSION = "v0.0.1"
+zapi.DESCRIPTION = "Zelly's Lua API of a Lua API, meant to make using Lua in ET easier"
+zapi.AUTHOR = "Zelly"
+zapi.CONTACT = "Discord: Tetra#4663" -- Might make a discord server later
+
+--- Checks whether we are on lua 5.0 or if we are on greater than 5.0
+-- The o() function is "Table Length" used in for loops etc.
+-- 5.1+ they added "#tableName" to get the length, but since we trying to be compatible with 5.0
+-- we need to use o(tableName) for anytime we getting table length
 if string.find(_VERSION,"5.0") then
 	zapi.old = true
-	local _tlen = table.getn
-	local _sform = string.format
-	local _unp = unpack
-	local _sf = string.find
 	va = function(...)
-		return _sform(_unp(arg))
+		return string.format(unpack(arg))
 	end
 	o = function(t)
 		if not t or type(t) ~= "table" then return 0 end
-		return _tlen(t)
+		return table.getn(t)
 	end
 	string.match = function(s, p)
-		local junk1,junk2,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10 = _sf(s , p )
+		local junk1,junk2,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10 = string.find(s , p )
 		return a1,a2,a3,a4,a5,a6,a7,a8,a9,a10
 	end
 else
@@ -30,28 +41,23 @@ else
 	end
 end
 
-zapi.NAME = "zapi"
-zapi.LONGNAME = "Zelly's Lua API"
-zapi.VERSION = "v0.0.1"
-zapi.DESCRIPTION = "Zelly's Lua API of a Lua API, meant to make using Lua in ET easier"
-zapi.AUTHOR = "Zelly"
-zapi.CONTACT = "Discord: Tetra#4663"
-
 
 --- Basepath is where the executable and lua files are
 zapi.basepath = string.gsub( et.trap_Cvar_Get("fs_basepath"),"\\","/") .. "/" .. et.trap_Cvar_Get("fs_game") .. "/"
 LUA_PATH = LUA_PATH .. ';' .. zapi.basepath -- Perhaps bad, if it already exists?
---- Homepath is where logs and json goes
+--- Homepath is where logs and any other written to data goes
 zapi.homepath = string.gsub( et.trap_Cvar_Get("fs_homepath"),"\\","/") .. "/" .. et.trap_Cvar_Get("fs_game") .. "/"
 
 zapi.startTime = -1 -- Level time the game started.
-zapi.isRestart = false
 zapi.currentRound = 0
-zapi.gamestate = "none"
+zapi.gamestate = "none" -- "unknown", "warmup", "restart", "game"
+zapi.isRestart = false -- is this game a result of map_restart
 zapi.intermission = false
 zapi.mapname = ""
 zapi.modname = ""
 
+
+--- Load all the required zapi modules
 require("zapi/misc")
 require("zapi/vars")
 require("zapi/logger")
@@ -59,6 +65,7 @@ require("zapi/file")
 require("zapi/client")
 require("zapi/scheduler")
 --require("zapi/command")
+-- will likely add the extra module loader here too
 
 
 --[[
@@ -112,6 +119,7 @@ end
 
 --[[ Intermission
 [round] don't remember the actual values this goes through
+-- not in etpro
 ]]--
 function et_IntermissionStarts( round )
 	-- redirect this function, cause it is not in all mods
@@ -137,21 +145,6 @@ function et_ShutdownGame( restart )
 	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_ShutdownGame", callbackReturn)
-	end
-end
-
---- Damage
--- [target] Target id
--- [attacker] Attacker id
--- [damage] Damage amount
--- [dflags] Damage flags
--- [mod] method of death
-function et_Damage( target, attacker, damage, dflags, mod )
-	local status,callbackReturn = pcall( function()
-		
-	end) -- end pcall (error checking)
-	if not status then
-		zapi.logger.error("et_Damage", callbackReturn)
 	end
 end
 
@@ -197,6 +190,20 @@ function et_ClientBegin( clientNum )
 	end
 end
 
+--- et_ClientSpawn
+-- [clientNum]
+-- [revived]
+-- [teamChange]
+-- [restoreHealth]
+function et_ClientSpawn( clientNum, revived, teamChange, restoreHealth )
+	local status,callbackReturn = pcall( function()
+		
+	end) -- end pcall (error checking)
+	if not status then
+		zapi.logger.error("et_ClientSpawn", callbackReturn)
+	end
+end
+
 --- et_ClientConnect
 -- [clientNum]
 function et_ClientConnect(clientNum, firstTime, isBot)
@@ -216,31 +223,6 @@ function et_ClientDisconnect( clientNum )
 	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_ClientDisconnect", callbackReturn)
-	end
-end
-
---- et_ClientSpawn
--- [clientNum]
--- [revived]
--- [teamChange]
--- [restoreHealth]
-function et_ClientSpawn( clientNum, revived, teamChange, restoreHealth )
-	local status,callbackReturn = pcall( function()
-		
-	end) -- end pcall (error checking)
-	if not status then
-		zapi.logger.error("et_ClientSpawn", callbackReturn)
-	end
-end
-
---- et_Obituary
--- [clientNum]
-function et_Obituary( victimNum, killerNum, meansOfDeath )
-	local status,callbackReturn = pcall( function()
-		
-	end) -- end pcall (error checking)
-	if not status then
-		zapi.logger.error("et_Obituary", callbackReturn)
 	end
 end
 
@@ -268,12 +250,41 @@ end
 
 --- et_CvarValue
 -- [clientNum]
+-- [cvar]
+-- [value]
+-- this is where G_QueryClientCvar sends its returned info
 function et_CvarValue( clientNum, cvar, value )
 	local status,callbackReturn = pcall( function()
 		
 	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_CvarValue", callbackReturn)
+	end
+end
+
+--- et_Obituary
+-- [clientNum]
+function et_Obituary( victimNum, killerNum, meansOfDeath )
+	local status,callbackReturn = pcall( function()
+		
+	end) -- end pcall (error checking)
+	if not status then
+		zapi.logger.error("et_Obituary", callbackReturn)
+	end
+end
+
+--- Damage
+-- [target] Target id
+-- [attacker] Attacker id
+-- [damage] Damage amount
+-- [dflags] Damage flags
+-- [mod] method of death
+function et_Damage( target, attacker, damage, dflags, mod )
+	local status,callbackReturn = pcall( function()
+		
+	end) -- end pcall (error checking)
+	if not status then
+		zapi.logger.error("et_Damage", callbackReturn)
 	end
 end
 
@@ -299,6 +310,7 @@ function zapi.shrubbot()
 		return true
 	end
 end
+
 function zapi.getTeamNum(team)
 	if not team then return nil end
 	if ( team == "b" or team == "allies" or team == "allied" or tonumber(team) == et.TEAM_ALLIES ) then

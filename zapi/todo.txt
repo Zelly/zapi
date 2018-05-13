@@ -23,3 +23,6 @@ add custom constants
 add sound functions
 Test things
 Add comments
+
+Add client setup in callbacks then finish the setup of clients and its functions
+setup the game functions that relied on client handler

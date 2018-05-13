@@ -62,7 +62,7 @@ function zapi.misc.table.merge(t1, t2)
 	-- Add any from table one that is not in table 2
 	for k=1, o(t1) do
 		if not zapi.misc.table.find(t2, t1[k]) then
-			t[o(t)+1] = t1[k] end
+			t[o(t)+1] = t1[k]
 		end
 	end
 	-- Add table 2 values (Since no table 2 values were added in first iteration)
@@ -210,7 +210,7 @@ zapi.misc.string = { }
 
 --- Wrap a string
 -- this code is taken from the user talks, I may need to find source later if it needs work
-function zapi.misc.string(s, limit)
+function zapi.misc.string.wrap(s, limit)
 	limit = tonumber(limit) or 72
 	local here = 1
 	return string.gsub(str,"(%s+)()(%S+)()" , function(sp, st, word, fi)
@@ -320,7 +320,7 @@ end
 --- Checks if a ip is IPv4
 function zapi.misc.string.ipv4(ip)
 	if ip == nil then return false end
-	if zapi.misc.string.ip_type == 1 then
+	if zapi.misc.string.ip_type(ip) == 1 then
 		return true
 	else
 		return false
@@ -333,7 +333,7 @@ end
 -- 2 = ipv6
 -- 3 = random string
 -- http://stackoverflow.com/questions/10975935/lua-function-check-if-ipv4-or-ipv6-or-string
-function Misc:GetIPType(ip)
+function zapi.misc.string.ip_type(ip)
 	-- must pass in a string value
 	if ip == nil or type(ip) ~= "string" then
 		return 0

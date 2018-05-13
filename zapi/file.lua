@@ -57,46 +57,6 @@ function zapi.file.load(filePath)
 	return table.concat(fileData,'\n')
 end
 
-function FileHandler:LoadFile(fileName,ignoreComments)
-    if not fileName then return self.NOT_EXIST end
-    if not self:exists(fileName) then return self.NOT_EXIST end
-    if ignoreComments ~= true then ignoreComments = false end
-    
-    local status , FileObject , err = pcall(io.open,Core.homepath .. fileName, "r")
-    if not FileObject then return self.ERROR,err end
-    if not status then return self.ERROR,FileObject end
-    
-    local fileData = { }
-    local inBlockComment = false
-    for line in FileObject:lines() do
-        if not line then break end
-        line = string.gsub( line , "\r" , "" ) -- FUCK MOTHER FUCKING CARRIAGE RETURNS
-        if ignoreComments then
-            -- WIP still needs testing
-            -- I believe string find will need to be subtracted by 2
-            local commentStart = string.find(line,'/%*')
-            local commentEnd = -1
-            if commentStart then -- Checks if block comment ends same line
-                if string.find(line,'%*/') then commentEnd = string.find(line,'%*/') else inBlockComment = true end
-            elseif not commentStart and inBlockComment then
-                if string.find(line,'%*/') then commentEnd = string.find(line,'%*/') end
-            elseif not commentStart and not inBlockComment then
-                commentStart = string.find(line,'//')
-                commentEnd   = -1
-            end
-            if commentStart then
-                local newLine = string.sub(line,1,commentStart)
-                if Misc:trim(newLine) ~= "" then fileData[tlen(fileData)+1] = newLine end
-            end
-        else
-            if line ~= "" then fileData[tlen(fileData)+1] = line end
-        end
-    end
-    FileObject:close()
-    Console:Debug("Read " .. tlen(fileData) .. " lines from " .. fileName,"file")
-    return table.concat(fileData,'\n')
-end
-
 function zapi.file.exists(filePath)
 	if not filePath then return false end
 	local fileObject = io.open(zapi.homepath .. filePath, "r")

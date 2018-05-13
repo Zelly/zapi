@@ -13,7 +13,7 @@ function zapi.client.new(clientNum)
 	
 	Client = zapi.client.Client(clientNum)
 	
-	if zapi.misc.table.insert(zapi.client.clients, Client, true, "id")
+	if zapi.misc.table.insert(zapi.client.clients, Client, true, "id") then
 		zapi.logger.debug("zapi.client.new: Created new client for clientNum: " .. clientNum)
 		table.sort(zapi.client.clients, function(a, b) return a.id < b.id end )
 		return zapi.misc.table.get(zapi.client.clients, clientNum, "id")
@@ -34,8 +34,7 @@ function zapi.client.getWithName(name)
 	if et.ClientNumberFromString then
 		local clientNum = tonumber( et.ClientNumberFromString( name ) ) or -1
 		if clientNum < 0 then return nil end
-			return zapi.misc.table.get(zapi.client.clients, clientNum, "id")
-		end
+		return zapi.misc.table.get(zapi.client.clients, clientNum, "id")
 	else
 		name = zapi.misc.string.trim(name, true, true) -- lower and clean color codes
 		if name == "" then return nil end
@@ -408,7 +407,7 @@ end
 
 function zapi.client.Client:setConfigStringKey(key, value)
 	if not key or not value then return end
-	self:setConfigString(et.Info_SetValueForKey(self:getConfigString(), key, value)
+	self:setConfigString(et.Info_SetValueForKey(self:getConfigString(), key, value))
 end
 
 function zapi.client.Client:getName()
@@ -443,26 +442,6 @@ function zapi.client.Client:getCountry()
 	else
 		return "Unknown"
 	end
-end
-
-function zapi.client.Client:
-	
-end
-
-function zapi.client.Client:
-	
-end
-
-function zapi.client.Client:
-	
-end
-
-function zapi.client.Client:
-	
-end
-
-function zapi.client.Client:
-	
 end
 
 setmetatable(zapi.client.Client, { __call = function(_, ...) return zapi.client.Client.new(...) end })

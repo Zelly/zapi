@@ -49,7 +49,7 @@ require("zapi/vars")
 require("zapi/logger")
 require("zapi/file")
 require("zapi/client")
-require("zapi/command")
+--require("zapi/command")
 require("zapi/misc")
 
 
@@ -81,11 +81,11 @@ function et_InitGame(levelTime, randomSeed, restart)
 		-- various values to tell what type of game is happening
 		if not gamestate or not restart then
 			zapi.gamestate = "unknown"
-		elseif gamestate == 2 and restart = 0 then
+		elseif gamestate == 2 and restart == 0 then
 			zapi.gamestate = "warmup"
-		elseif gamestate == 2 and restart = 1 then
+		elseif gamestate == 2 and restart == 1 then
 			zapi.gamestate = "restart"
-		elseif gamestate == 0 and restart = 1 then
+		elseif gamestate == 0 and restart == 1 then
 			zapi.gamestate = "game"
 		else
 			zapi.gamestate = "unknown gs:" .. gamestate .. " restart:" .. restart
@@ -96,7 +96,7 @@ function et_InitGame(levelTime, randomSeed, restart)
 		
 		et.RegisterModname( zapi.NAME)
 		zapi.logger.info(zapi.NAME .. " finished loading")
-	end -- end pcall (error checking)
+	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_InitGame", callbackReturn)
 	end
@@ -115,7 +115,7 @@ function zapi.IntermissionStarts()
 		zapi.currentRound = et.trap_Cvar_Get("g_currentround")
 		zapi.intermission = true
 		zapi.logger.log("intermission", zapi.mapname .. " round " .. zapi.currentRound)
-	end -- end pcall (error checking)
+	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("zapi.IntermissionStarts", callbackReturn)
 	end
@@ -126,7 +126,7 @@ end
 function et_ShutdownGame( restart )
 	local status,callbackReturn = pcall( function()
 		zapi.logger.save()
-	end -- end pcall (error checking)
+	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_ShutdownGame", callbackReturn)
 	end
@@ -141,7 +141,7 @@ end
 function et_Damage( target, attacker, damage, dflags, mod )
 	local status,callbackReturn = pcall( function()
 		
-	end -- end pcall (error checking)
+	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_Damage", callbackReturn)
 	end
@@ -156,7 +156,7 @@ function et_RunFrame( levelTime )
 		if not zapi.intermission and et.trap_Cvar_Get("gamestate") == 3 then zapi.IntermissionStart() end -- for non silent mods
 		-- Check if any active clients.
 		zapi.scheduler.run(levelTime)
-	end -- end pcall (error checking)
+	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_RunFrame", callbackReturn)
 	end
@@ -172,7 +172,7 @@ end
 function et_ClientUserinfoChanged(clientNum)
 	local status,callbackReturn = pcall( function()
 		
-	end -- end pcall (error checking)
+	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_ClientUserinfoChanged", callbackReturn)
 	end
@@ -183,7 +183,7 @@ end
 function et_ClientBegin( clientNum )
 	local status,callbackReturn = pcall( function()
 		
-	end -- end pcall (error checking)
+	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_ClientBegin", callbackReturn)
 	end
@@ -194,7 +194,7 @@ end
 function et_ClientConnect(clientNum, firstTime, isBot)
 	local status,callbackReturn = pcall( function()
 		
-	end -- end pcall (error checking)
+	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_ClientConnect", callbackReturn)
 	end
@@ -205,7 +205,7 @@ end
 function et_ClientDisconnect( clientNum )
 	local status,callbackReturn = pcall( function()
 		
-	end -- end pcall (error checking)
+	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_ClientDisconnect", callbackReturn)
 	end
@@ -219,7 +219,7 @@ end
 function et_ClientSpawn( clientNum, revived, teamChange, restoreHealth )
 	local status,callbackReturn = pcall( function()
 		
-	end -- end pcall (error checking)
+	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_ClientSpawn", callbackReturn)
 	end
@@ -230,7 +230,7 @@ end
 function et_Obituary( victimNum, killerNum, meansOfDeath )
 	local status,callbackReturn = pcall( function()
 		
-	end -- end pcall (error checking)
+	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_Obituary", callbackReturn)
 	end
@@ -241,7 +241,7 @@ end
 function et_ConsoleCommand( command )
 	local status,callbackReturn = pcall( function()
 		
-	end -- end pcall (error checking)
+	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_ConsoleCommand", callbackReturn)
 	end
@@ -252,7 +252,7 @@ end
 function et_ClientCommand( clientNum, command )
 	local status,callbackReturn = pcall( function()
 		
-	end -- end pcall (error checking)
+	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_ClientCommand", callbackReturn)
 	end
@@ -263,7 +263,7 @@ end
 function et_CvarValue( clientNum, cvar, value )
 	local status,callbackReturn = pcall( function()
 		
-	end -- end pcall (error checking)
+	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_CvarValue", callbackReturn)
 	end

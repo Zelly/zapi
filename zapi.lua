@@ -1,5 +1,5 @@
 zapi = { }
-
+o = nil
 if string.find(_VERSION,"5.0") then
 	zapi.old = true
 	local _tlen = table.getn
@@ -19,6 +19,15 @@ if string.find(_VERSION,"5.0") then
 	end
 else
 	zapi.old = false
+	o = function(t)
+		return #t
+	end
+	if not math.mod then
+		function math.mod( num , div )
+			return num % div
+			--return num - ( math.tointeger(math.floor( num / div )) * div )
+		end
+	end
 end
 
 zapi.NAME = "zapi"
@@ -35,7 +44,6 @@ LUA_PATH = LUA_PATH .. ';' .. zapi.basepath -- Perhaps bad, if it already exists
 --- Homepath is where logs and json goes
 zapi.homepath = string.gsub( et.trap_Cvar_Get("fs_homepath"),"\\","/") .. "/" .. et.trap_Cvar_Get("fs_game") .. "/"
 
-
 zapi.startTime = -1 -- Level time the game started.
 zapi.isRestart = false
 zapi.currentRound = 0
@@ -49,8 +57,8 @@ require("zapi/vars")
 require("zapi/logger")
 require("zapi/file")
 require("zapi/client")
+require("zapi/scheduler")
 --require("zapi/command")
-require("zapi/misc")
 
 
 --[[

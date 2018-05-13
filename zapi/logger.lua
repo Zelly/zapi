@@ -7,7 +7,8 @@ zapi.logger.debugstream = false
 zapi.logger.debugfilename = "zapi_debug.log"
 zapi.logger.debugdata = { }
 zapi.logger.errorcount = 0
-local errorFilePath = zapi.homepath .. '/' .. et.trap_Cvar_Get( 'fs_game' ) .. '/zapi_errors.log'
+zapi.logger.printerrors = true
+local errorFilePath = zapi.homepath .. 'zapi_errors.log' -- keep this out of zapi & logs dir because we can't guarntee they are created
 
 --[[
 
@@ -47,6 +48,9 @@ function zapi.logger.error(errorLocation, errorTraceback)
 	errorFile:write("\n(" .. zapi.logger.errorcount .. ") " .. os.date("%c") .. " " .. errorLocation .. "\n" .. errorTraceback .. "\n")
 	errorFile:close()
 	et.G_LogPrint("zapi-error(" .. zapi.logger.errorcount .. "): " .. errorLocation .. "\n")
+	if zapi.logger.printerrors then
+		et.G_LogPrint(errorTraceback .. "\n")
+	end
 	if zapi.logger.errorcount >= 1000 then
 		-- Wayyyy too many errors happening force a shutdown
 		et.G_LogPrint("zapi-error: ****FATAL**** Forcing zapi shutdown, too many errors\n")
@@ -92,18 +96,18 @@ end
 
 function zapi.logger.save()
 	if not next(zapi.logger.filedata) then return end
-	local fileData = { }
+	local saveData = { }
 	for k=1, o(zapi.logger.filedata) do
-		fileData[o(fileData)+1] = zapi.logger.filedata[k][1] .. " " .. zapi.logger.filedata[k][2] .. " " .. zapi.logger.filedata[k][3]
+		saveData[o(saveData)+1] = zapi.logger.filedata[k][1] .. " " .. zapi.logger.filedata[k][2] .. " " .. zapi.logger.filedata[k][3]
 	end
 	
-	if not next(fileData) then return end
-	zapi.file.save(zapi.logger.filepath .. zapi.logger.filename, zapi.logger.filedata, "a")
+	if not next(saveData) then return end
+	zapi.file.save(zapi.logger.path .. zapi.logger.filename, saveData, "a")
 end
 
 function zapi.logger.savedebugstream()
 	if not zapi.logger.debugging or not zapi.logger.debugstream then return end
 	if not next(zapi.logger.debugdata) then return end
-	zapi.file.save(zapi.logger.filepath .. zapi.logger.debugfilename, zapi.logger.debugdata, "a")
+	zapi.file.save(zapi.logger.path .. zapi.logger.debugfilename, zapi.logger.debugdata, "a")
 	zapi.logger.debugdata = { } -- refresh file data
 end

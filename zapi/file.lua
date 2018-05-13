@@ -37,7 +37,7 @@ function zapi.file.save(filePath, fileData, saveType)
 	end
 	fileObject:close()
 	zapi.logger.debug("Wrote to " .. tostring(filePath))
-	return self.SUCCESS
+	return zapi.file.SUCCESS
 end
 
 function zapi.file.load(filePath)

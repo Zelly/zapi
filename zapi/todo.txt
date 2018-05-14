@@ -6,10 +6,9 @@ Client:
 zapi/core/callbacks
 	add some more logging
 	add module loading
-	custom callbacks: changestate switch team
+	Custom callback ClientGibbed
+		Check if this is possible, when testing is doable
+	Will need file saving for client Connect order in order for it to be any use
 command:
 	needs everything
 	might need string formatting functions
-
-Add client setup in callbacks then finish the setup of clients and its functions
-setup the game functions that relied on client handler

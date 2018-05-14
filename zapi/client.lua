@@ -7,7 +7,10 @@ zapi.client.clients = { }
 -- todo obituary callbacks? pretty sure not possible here
 
 -- todo a test if local Client is the same memory location as zapi.misc.table.get, then we can do away with zapi.misc.table.get
+--- Create a new client if its not found
 function zapi.client.new(clientNum)
+	clientNum = tonumber(clientNum)
+	if not clientNum or clientNum < 0 or clientNum > 63 then return end
 	local Client = zapi.misc.table.get(zapi.client.clients, clientNum, "id")
 	if Client then return Client end
 	
@@ -21,6 +24,20 @@ function zapi.client.new(clientNum)
 		zapi.logger.debug("zapi.client.new: Could not create new client(already exists) for clientNum: " .. clientNum)
 		return nil
 	end
+end
+
+--- Get a client without falling back to creating new clients
+-- use this function when client should already be created
+function zapi.client.get(clientNum)
+	clientNum = tonumber(clientNum)
+	if not clientNum or clientNum < 0 or clientNum > 63 then return end
+	local Client = zapi.misc.table.get(zapi.client.clients, clientNum, "id")
+	if Client then
+		return Client
+	else
+		return nil
+	end
+	
 end
 
 function zapi.client.delete(clientNum)
@@ -95,6 +112,7 @@ function zapi.client.Client.new(clientNum)
 		firstConnect = true,
 		valid = false, -- Mod GUID has been validated
 		team = 0,
+		name = "",
 		cvars = { },
 		userinfo = { },
 	}
@@ -102,6 +120,11 @@ function zapi.client.Client.new(clientNum)
 end
 
 function zapi.client.Client:begin()
+	
+end
+
+function zapi.client.Client:died()
+	
 end
 
 function zapi.client.Client:validate()
@@ -134,7 +157,7 @@ function zapi.client.Client:validate()
 end
 
 function zapi.client.Client:getGuid()
-	local guid = et.Info_ValueForKey( self:getUserInfo(), "cl_guid" )
+	local guid = et.Info_ValueForKey( self:getUserinfo(), "cl_guid" )
 	guid = string.upper(zapi.misc.trim(guid))
 	if string.len(guid) ~= 32 then
 		zapi.logger.debug("zapi.client.Client:getGuid: " .. self:getName() .. " guid invalid length: " .. guid)
@@ -146,7 +169,7 @@ end
 function zapi.client.Client:getSilentGuid()
 	if zapi.modname ~= "silent" then return nil end -- return nil or empty string?
 	local silentGuid = self:get("sess.guid")
-	silentGuid = string.upper(zapi.misc.trim(string.gsub(silentGuid, ":%d*", "")))
+	silentGuid = string.upper(zapi.misc.string.trim(string.gsub(silentGuid, ":%d*", "")))
 	if string.len(silentGuid) == 32 then
 		return silentGuid
 	else
@@ -493,7 +516,7 @@ function zapi.client.Client:setConfigStringKey(key, value)
 end
 
 function zapi.client.Client:getName()
-	return et.Info_ValueForKey( self:getUserInfo(), "name" )
+	return et.Info_ValueForKey( self:getUserinfo(), "name" )
 end
 
 function zapi.client.Client:getCleanName()
@@ -503,14 +526,20 @@ end
 function zapi.client.Client:setName(name)
 	name = zapi.misc.trim(name)
 	if string.len(et.Q_CleanStr(name)) <= 0 then return end
-	local userinfo = self:getUserInfo()
+	local userinfo = self:getUserinfo()
 	userinfo = et.Info_SetValueForKey(userinfo, "name", name)
 	et.trap_SetUserinfo(self.id, userinfo)
 	et.ClientUserinfoChanged(self.id)
 end
 
+function zapi.client.Client:getIp()
+	local ip = string.gsub(et.Info_ValueForKey( self:getUserinfo(), "ip" ), ":%d*","")
+	self.userinfo.ip = ip
+	return ip
+end
+
 function zapi.client.Client:isBot()
-	if zapi.misc.trim(self:getIp(), true) == "localhost" then
+	if zapi.misc.string.trim(self:getIp(), true) == "localhost" then
 		return true
 	else
 		return false

@@ -55,6 +55,9 @@ zapi.isRestart = false -- is this game a result of map_restart
 zapi.intermission = false
 zapi.mapname = ""
 zapi.modname = ""
+zapi.teams = { }
+zapi.teams.bots = { }
+zapi.teams.players = { }
 
 
 --- Load all the required zapi modules
@@ -112,9 +115,10 @@ function et_InitGame(levelTime, randomSeed, restart)
 		et.RegisterModname( zapi.NAME)
 		
 		-- Register debug log file to save every 15s
-		if zapi.logger.debugging and zapi.logger.debugstream ten
+		if zapi.logger.debugging and zapi.logger.debugstream then
 			zapi.scheduler.add(function() zapi.logger.savedebugstream() end,15,15,"Saves debug and custom log stream")
 		end
+		zapi.getTeams()
 		zapi.logger.info(zapi.NAME .. " finished loading")
 	end) -- end pcall (error checking)
 	if not status then
@@ -177,11 +181,39 @@ end
 -- [clientNum]
 function et_ClientUserinfoChanged(clientNum)
 	local status,callbackReturn = pcall( function()
+		local Client = zapi.client.get(clientNum)
+		if not Client then return end
+		local newTeam = Client:getTeam()
+		local name = zapi.misc.string.trim(Client:getName())
+		if Client.team == 0 then
+			-- Set team for first time, since it was not done elsewhere
+			zapi.logger.debug("et_ClientUserinfoChanged("..name..") .team("..Client.team..") == 0 || newTeam = ("..newTeam..")")
+			Client.team = newTeam
+		elseif Client.team ~= newTeam then
+			zapi.logger.debug("et_ClientUserinfoChanged("..name..") .team("..Client.team..") ~= newTeam("..newTeam..")")
+			zapi.ClientSwitchTeam(Client, newTeam)
+		end
 		
+		if name ~= Client.name then
+			zapi.ClientChangeName(Client, name)
+		end
 	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_ClientUserinfoChanged", callbackReturn)
 	end
+end
+
+function zapi.ClientChangeName(Client, name)
+	zapi.logger.debug("ClientChangeName("..name..") changed name from " .. Client.name)
+	Client.name = Client:getName()
+end
+
+function zapi.ClientSwitchTeam(Client, team)
+	local fromTeam = Client.team
+	zapi.logger.debug("ClientSwitchTeam("..Client:getName()..") .team("..Client.team..") ~= newTeam("..team..")")
+	Client.team = team
+	zapi.getTeams()
+	-- Do I need a Client.skipNext ?
 end
 
 --- ClientBegin
@@ -195,6 +227,9 @@ function et_ClientBegin( clientNum )
 			return
 		end
 		Client.newClient = false
+		if Client.name == "" then
+			Client.name = zapi.misc.string.trim(Client:getName())
+		end
 		if Client.team == 0 then
 			Client.team = Client:getTeam()
 		end
@@ -213,7 +248,7 @@ end
 function et_ClientSpawn( clientNum, revived, teamChange, restoreHealth )
 	local status,callbackReturn = pcall( function()
 		zapi.logger.debug("et_ClientSpawn( "..clientNum..","..revived..","..tostring(teamChange)..","..tostring(restoreHealth).." )")
-		--local Client = zapi.client.new(clientNum)
+		--local Client = zapi.client.get(clientNum)
 	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_ClientSpawn", callbackReturn)
@@ -225,7 +260,7 @@ end
 function et_ClientConnect(clientNum, firstTime, isBot)
 	local status,callbackReturn = pcall( function()
 		zapi.logger.debug("et_ClientConnect( "..clientNum..","..firstTime..","..isBot.." )")
-		local Client = zapi.client.add(clientNum)
+		local Client = zapi.client.new(clientNum)
 		if not Client then
 			zapi.logger.debug("et_ClientConnect: failed to get new client for " .. clientNum)
 			return
@@ -246,7 +281,7 @@ end
 function et_ClientDisconnect( clientNum )
 	local status,callbackReturn = pcall( function()
 		zapi.logger.debug("et_ClientDisconnect( "..clientNum..")")
-		local Client = zapi.client.new(clientNum)
+		local Client = zapi.client.get(clientNum)
 		--Game:setLastConnect(Client,false)
 		zapi.client.delete(Client.id)
 	end) -- end pcall (error checking)
@@ -295,11 +330,60 @@ end
 -- [clientNum]
 function et_Obituary( victimNum, killerNum, meansOfDeath )
 	local status,callbackReturn = pcall( function()
+		if zapi.gamestate ~= "game" then return end
+		zapi.logger.debug("et_Obituary( "..victimNum..","..killerNum..","..meansOfDeath.." )")
+		local Killer = zapi.client.get(killerNum)
+		local Victim = zapi.client.get(victimNum)
+		if not Killer and not Victim then
+			-- Non client death, not sure if this happens, other than in a lua error
+			return
+		end
+		if Killer and not Victim then
+			-- Killer killed an unknown victim/entity
+			return
+		end
+		Victim:died()
+		if not Killer and Victim then
+			-- A world death (The map killed the player, i think falling to death too)
+			zapi.WorldDeath(Victim, meansOfDeath)
+			return
+		end
+		if Killer.id == Victim.id then
+			-- Player killed himself.
+			zapi.SelfKill(Victim, meansOfDeath)
+			return
+		end
 		
+		if Killer:getTeam() == Victim:getTeam() then
+			-- A teamkill
+			zapi.TeamKill(Killer,Victim,meansOfDeath)
+			return
+		else
+			-- A normal kill
+			zapi.Kill(Killer,Victim,meansOfDeath)
+			return
+		end
 	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_Obituary", callbackReturn)
 	end
+end
+
+--- These obituary callbacks expect that Killer and Victim are valid since they are already checked in et_Obituary
+function zapi.Kill(Killer,Victim,mod)
+	
+end
+
+function zapi.TeamKill(Killer,Victim,mod)
+	
+end
+
+function zapi.WorldKill(Victim,mod)
+	
+end
+
+function zapi.SelfKill(Victim,mod)
+	
 end
 
 --- Damage
@@ -308,6 +392,7 @@ end
 -- [damage] Damage amount
 -- [dflags] Damage flags
 -- [mod] method of death
+--[[
 function et_Damage( target, attacker, damage, dflags, mod )
 	local status,callbackReturn = pcall( function()
 		
@@ -315,7 +400,7 @@ function et_Damage( target, attacker, damage, dflags, mod )
 	if not status then
 		zapi.logger.error("et_Damage", callbackReturn)
 	end
-end
+end]]--
 
 --- Print
 -- [text] text printed to server console
@@ -357,13 +442,66 @@ function zapi.getTeamNum(team)
 	return team
 end
 
--- todo: add Game:getTeams functions
--- todo: add Game:Spec999
--- todo: add Game:ClientGibbed
--- todo: add Game:ClientSwitchTeam
--- todo: add ClientChangeName
--- todo: add setLastConnect
--- todo: add isPlayerOnServer
--- todo: add bit support
--- todo: add obituary stuff, kill, teamkill, death, selfkill,world death
+function zapi.getTeams()
+	zapi.teams.bots[et.TEAM_AXIS] = 0
+	zapi.teams.bots[et.TEAM_ALLIES] = 0
+	zapi.teams.bots[et.TEAM_SPEC] = 0
+	zapi.teams.players[et.TEAM_AXIS] = 0
+	zapi.teams.players[et.TEAM_ALLIES] = 0
+	zapi.teams.players[et.TEAM_SPEC] = 0
+	for k=1, o(zapi.client.clients) do
+		local Client = zapi.client.clients[k]
+		local team = Client:getTeam()
+		if Client:isBot() then
+			if team == et.TEAM_AXIS then
+				zapi.teams.bots[et.TEAM_AXIS] = zapi.teams.bots[et.TEAM_AXIS] + 1
+			elseif team == et.TEAM_ALLIES then
+				zapi.teams.bots[et.TEAM_ALLIES] = zapi.teams.bots[et.TEAM_ALLIES] + 1
+			elseif team == et.TEAM_SPEC then
+				zapi.teams.bots[et.TEAM_SPEC] = zapi.teams.bots[et.TEAM_SPEC] + 1
+			else
+				zapi.logger.debug("zapi.getTeams(): got bot " .. Client.id .. " on invalid team " .. team)
+				zapi.teams.bots[et.TEAM_SPEC] = zapi.teams.bots[et.TEAM_SPEC] + 1
+			end
+		else
+			if team == et.TEAM_AXIS then
+				zapi.teams.players[et.TEAM_AXIS] = zapi.teams.players[et.TEAM_AXIS] + 1
+			elseif team == et.TEAM_ALLIES then
+				zapi.teams.players[et.TEAM_ALLIES] = zapi.teams.players[et.TEAM_ALLIES] + 1
+			elseif team == et.TEAM_SPEC then
+				zapi.teams.players[et.TEAM_SPEC] = zapi.teams.players[et.TEAM_SPEC] + 1
+			else
+				zapi.logger.debug("zapi.getTeams(): got player " .. Client.id .. " on invalid team " .. team)
+				zapi.teams.players[et.TEAM_SPEC] = zapi.teams.players[et.TEAM_SPEC] + 1
+			end
+		end
+	end
+end
+
+function zapi.isPlayerOnServer()
+	local players = (zapi.teams.players[et.TEAM_AXIS] + zapi.teams.players[et.TEAM_ALLIES] + zapi.teams.players[et.TEAM_SPEC])
+	if players > 0 then
+		return true
+	else
+		return false
+	end
+end
+
+function zapi.isPlayerOnTeam()
+	local players = (zapi.teams.players[et.TEAM_AXIS] + zapi.teams.players[et.TEAM_ALLIES])
+	if players > 0 then
+		return true
+	else
+		return false
+	end
+end
+
+function zapi.isClientOnTeam() -- includes bots
+	local players = (zapi.teams.players[et.TEAM_AXIS] + zapi.teams.players[et.TEAM_ALLIES] + zapi.teams.bots[et.TEAM_AXIS] + zapi.teams.bots[et.TEAM_ALLIES])
+	if players > 0 then
+		return true
+	else
+		return false
+	end
+end
 

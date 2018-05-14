@@ -110,6 +110,11 @@ function et_InitGame(levelTime, randomSeed, restart)
 		zapi.logger.log("init", zapi.mapname .. " " .. zapi.gamestate .. " round " .. zapi.currentRound)
 		
 		et.RegisterModname( zapi.NAME)
+		
+		-- Register debug log file to save every 15s
+		if zapi.logger.debugging and zapi.logger.debugstream ten
+			zapi.scheduler.add(function() zapi.logger.savedebugstream() end,15,15,"Saves debug and custom log stream")
+		end
 		zapi.logger.info(zapi.NAME .. " finished loading")
 	end) -- end pcall (error checking)
 	if not status then
@@ -183,7 +188,17 @@ end
 -- [clientNum]
 function et_ClientBegin( clientNum )
 	local status,callbackReturn = pcall( function()
-		
+		zapi.logger.debug("et_ClientBegin("..clientNum..")")
+		local Client = zapi.client.new(clientNum)
+		if not Client.newClient then
+			-- Client was already created
+			return
+		end
+		Client.newClient = false
+		if Client.team == 0 then
+			Client.team = Client:getTeam()
+		end
+		Client:validate()
 	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_ClientBegin", callbackReturn)
@@ -197,7 +212,8 @@ end
 -- [restoreHealth]
 function et_ClientSpawn( clientNum, revived, teamChange, restoreHealth )
 	local status,callbackReturn = pcall( function()
-		
+		zapi.logger.debug("et_ClientSpawn( "..clientNum..","..revived..","..tostring(teamChange)..","..tostring(restoreHealth).." )")
+		--local Client = zapi.client.new(clientNum)
 	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_ClientSpawn", callbackReturn)
@@ -208,7 +224,17 @@ end
 -- [clientNum]
 function et_ClientConnect(clientNum, firstTime, isBot)
 	local status,callbackReturn = pcall( function()
-		
+		zapi.logger.debug("et_ClientConnect( "..clientNum..","..firstTime..","..isBot.." )")
+		local Client = zapi.client.add(clientNum)
+		if not Client then
+			zapi.logger.debug("et_ClientConnect: failed to get new client for " .. clientNum)
+			return
+		end
+		if firstTime == 1 then
+			Client.firstConnect = true
+		else
+			Client.firstConnect = false
+		end
 	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_ClientConnect", callbackReturn)
@@ -219,7 +245,10 @@ end
 -- [clientNum]
 function et_ClientDisconnect( clientNum )
 	local status,callbackReturn = pcall( function()
-		
+		zapi.logger.debug("et_ClientDisconnect( "..clientNum..")")
+		local Client = zapi.client.new(clientNum)
+		--Game:setLastConnect(Client,false)
+		zapi.client.delete(Client.id)
 	end) -- end pcall (error checking)
 	if not status then
 		zapi.logger.error("et_ClientDisconnect", callbackReturn)
@@ -290,10 +319,14 @@ end
 
 --- Print
 -- [text] text printed to server console
--- not used
---[[function et_Print( text )
-	-- body
-end--]]
+function et_Print( text )
+	local status,callbackReturn = pcall( function()
+		zapi.client.getETProIACGuid(text)
+	end) -- end pcall (error checking)
+	if not status then
+		zapi.logger.error("et_Print", callbackReturn)
+	end
+end
 
 --- Game functions specific to ET
 function zapi.getMapPercentageComplete()

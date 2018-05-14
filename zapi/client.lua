@@ -62,6 +62,26 @@ function zapi.client.iterate(func)
 	end
 end
 
+function zapi.client.getETProIACGuid(text)
+	if zapi.modname ~= "etpro" or not text or string.len(text) < 40 then return end
+	-- etpro IAC: 0 GUID [GUIDISHEREGUIDISHEREGUIDISHEREGUIDISHERE] [name]
+	--      Only called once per connection
+	-- etpro IAC: 0 [NAMEISHERECANCONTAINALOTOFCHARACHTERS] [GUIDISHEREGUIDISHEREGUIDISHEREGUIDISHERE] [win32]
+	--      Called every game init
+	-- Kind of relys on globalcombinedfixes.lua to verify this isn't malformed, so put that first.
+	local clientNum, guid = string.match(text, "^etpro IAC: (%d+) %[.+%] %[(%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x)%]")
+	if not clientNum or not guid then return end
+	if string.len(guid) ~= 40 then return end
+	local Client = zapi.client.new(clientNum)
+	if not Client then
+		zapi.logger.debug("getETProIACGuid: " .. clientNum .. " Could not create Client")
+		return
+	end
+	zapi.logger.debug("getETProIACGuid: " .. clientNum .. " " .. Client:getName() .. " " .. guid)
+	Client.etproGuid = guid
+	Client:validate()
+end
+
 zapi.client.Client = { }
 zapi.client.Client.__index = zapi.client.Client
 zapi.client.Client.__tostring = function(t)
@@ -71,13 +91,75 @@ end
 function zapi.client.Client.new(clientNum)
 	local clientData = {
 		id = clientNum,
+		newClient = true, -- mainly for future use if we need to progamtically know its fresh client
+		firstConnect = true,
+		valid = false, -- Mod GUID has been validated
+		team = 0,
 		cvars = { },
+		userinfo = { },
 	}
 	return setmetatable(clientData, zapi.client.Client)
 end
 
 function zapi.client.Client:begin()
+end
 
+function zapi.client.Client:validate()
+	if self:isBot() then
+		self.valid = true
+		return
+	end
+	if zapi.modname == "silent" and self:getSilentGuid() == "" then
+		self.valid = false
+		zapi.scheduler.add(function() self:validate() end, 0, 5, "Validate silent guid for " .. self:getName())
+		return
+	elseif zapi.modname == "etpro" and self:getETProGuid() == "" then
+		self.valid = false
+		zapi.scheduler.add(function() self:validate() end, 0, 5, "Validate etpro guid for " .. self:getName())
+		return
+	elseif zapi.modname ~= "etpro" and zapi.modname ~= "silent" then
+		local guid = self:getGuid()
+		if guid == "" then
+			-- could block here but I'll leave that up to server owners
+			zapi.logger.debug("zapi.client.Client:validate: " .. self.id .. " " .. self:getName() .." missing default guid")
+		end
+	end
+	
+	-- Returned some sort of guid
+	if not self.valid then
+		zapi.logger.debug("zapi.client.Client: " .. self:getName() .. " guid validated")
+		self.valid = true
+		self:begin()
+	end
+end
+
+function zapi.client.Client:getGuid()
+	local guid = et.Info_ValueForKey( self:getUserInfo(), "cl_guid" )
+	guid = string.upper(zapi.misc.trim(guid))
+	if string.len(guid) ~= 32 then
+		zapi.logger.debug("zapi.client.Client:getGuid: " .. self:getName() .. " guid invalid length: " .. guid)
+		return nil -- return nil or empty string?
+	end
+	return guid
+end
+
+function zapi.client.Client:getSilentGuid()
+	if zapi.modname ~= "silent" then return nil end -- return nil or empty string?
+	local silentGuid = self:get("sess.guid")
+	silentGuid = string.upper(zapi.misc.trim(string.gsub(silentGuid, ":%d*", "")))
+	if string.len(silentGuid) == 32 then
+		return silentGuid
+	else
+		return nil
+	end
+end
+
+function zapi.client.Client:getETProGuid()
+	if zapi.modname ~= "etpro" then return nil end
+	if not self.etproGuid or self.etproGuid == "" then
+		return nil
+	end
+	return string.upper(self.etproGuid)
 end
 
 function zapi.client.Client:get(fieldName, index)

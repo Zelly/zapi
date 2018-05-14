@@ -1,28 +1,15 @@
-Logger:
-Filehandler:
-ClientHandler
-	everything
-Core/now just putting everything in the original file
-	go over game functions probably keep them all in core
-	add log messages
+Sound functions
+Color table may need to be done differently, kinda awkard and long to write atm
+Client:
+	print/chat functions
+	callback setup
+zapi/core/callbacks
+	add some more logging
 	add module loading
-	add bit functions
-	custom callbacks like changestate and switch team
-	
-Commandhandler?
-
-Misc
-	A lot of string formatting tables was left out for its complexity and it has little use in the api
-	if I am going to rebuild the command system it will need to be reimplemented
-
-Color table
-	done, may need to adjust zapi.color.WHITE etc..
-	
-add country table
-add custom constants
-add sound functions
-Test things
-Add comments
+	custom callbacks: changestate switch team
+command:
+	needs everything
+	might need string formatting functions
 
 Add client setup in callbacks then finish the setup of clients and its functions
 setup the game functions that relied on client handler
